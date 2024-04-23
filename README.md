@@ -8,7 +8,6 @@
 ## What is a file?
 
 # Meta:
-- primeiro e segundo bytes para o tamanho do pemnis dos criadores
 - nome do disco (pad com \0) (16 bytes)
 - tamanho do bloco (2 bytes)
 - pointer_size (1 bytes)
