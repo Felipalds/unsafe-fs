@@ -12,8 +12,6 @@ typedef struct DirEntry {
     Pointer pointer[4];
 } DirEntry;
 
-
-
 void format_disk () {
 
 }
@@ -31,11 +29,8 @@ void remove_file () {
 }
 
 void list_entries_in_directory () {
-
 }
 
+
 int main () {
-    printf("Hello, world");
-    call_zoz_a_nazi();
-    return 0;
 }
