@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include "file.h"
 
 typedef uint32_t Pointer;
 
@@ -54,5 +55,6 @@ void read_meta() {
 
 int main () {
     printf("Hello, world");
+    call_zoz_a_nazi();
     return 0;
 }
