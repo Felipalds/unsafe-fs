@@ -53,7 +53,6 @@ void read_meta() {
 }
 
 int main () {
-
     printf("Hello, world");
-
+    return 0;
 }
