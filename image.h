@@ -1,6 +1,9 @@
+#include "consts.h"
+#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h> // for SCNu16 and SCNu32
 
 
 typedef uint32_t Pointer;
@@ -136,3 +139,12 @@ int free_block(Image image, Pointer block) {
     return 0;
 }
 
+void view_meta (Image image) {
+    printf("DISK NAME: %s\n", image.meta.disk_name);
+    printf("BLOCK SIZE: %"SCNu16"\n", image.meta.block_size);
+    printf("DISK SIZE: %"SCNu32"\n", image.meta.disk_size);
+}
+
+void list_root_dir() {
+
+}

@@ -1,5 +1,5 @@
 ## Funções primárias
-- Criar imagem em branco (Rodrigues)
+~~Criar imagem em branco (Rodrigues)~~
 - Popular dados no Meta e pelo um arquivo (Luiz)
   - create and insert file
 - Ler a imagem (abrir a imagem) (Luiz)
