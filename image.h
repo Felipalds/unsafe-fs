@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 
 
 typedef uint32_t Pointer;
@@ -25,10 +27,7 @@ Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint3
     MetaBlock meta;
     meta.block_size = block_size;
     meta.disk_size = disk_size;
-    memset(meta.disk_name, 0, sizeof(meta.disk_name));
-    for (int i = 0; disk_name[i] != '\0' && i < sizeof(meta.disk_name); i++) {
-        meta.disk_name[i] = disk_name[i];
-    }
+    strncpy(meta.disk_name, disk_name, sizeof(meta.disk_name));
     fseek(file, 0, SEEK_SET);
     fwrite(&meta, sizeof(meta), 1, file);
 
@@ -48,8 +47,8 @@ Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint3
 }
 
 Image image_open(FILE *file) {
-    MetaBlock meta;
     fseek(file, 0, SEEK_SET);
+    MetaBlock meta;
     fread(&meta, sizeof(meta), 1, file); 
     // TODO checar erro de leitura
     
@@ -102,6 +101,10 @@ Pointer alloc_block(Image image) {
 }
 
 void free_block(Image image, Pointer block) {
+    // não liberar meta e root
+    if (block <= 1) {
+        return;
+    }
     fseek(image.file, sizeof(image.meta), SEEK_SET);
     Interval interval;
     for (;;) {
@@ -111,15 +114,18 @@ void free_block(Image image, Pointer block) {
         }
         fread(&interval, sizeof(interval), 1, image.file);
         if (interval.begin <= block && block <= interval.end) {
+            // bloco ja estava livre
             return;
         }
         if (interval.begin == block+1) {
             interval.begin--;
             break;
-        } else if (interval.end == block-1) {
+        }
+        if (interval.end == block-1) {
             interval.end++;
             break;
-        } else if (interval.begin == 0) {
+        }
+        if (interval.begin == 0) {
             interval.begin = block;
             interval.end = block;
             break;
