@@ -10,4 +10,8 @@ void print(char *COLOR, char *message) {
    printf("%s%s%s",COLOR, message, RESET );
 }
 
+void success(char *message) {
+    printf("%s%s%s\n", GREEN, message, RESET);
+}
+
 #endif //UNSAFE_FS_UTILS_H
