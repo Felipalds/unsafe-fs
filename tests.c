@@ -27,6 +27,30 @@ int test_image_create_open() {
         fprintf(stderr, "ERRO (image_create/image_open): disk_size não escrito corretamente\n");
         err++;
     }
+    
+    fseek(image.file, sizeof(image.meta), SEEK_SET);
+    Pointer free_pointers[4];
+    if (fread(free_pointers, sizeof(free_pointers), 1, image.file) != 1) {
+        fprintf(stderr, "ERRO (image_create/image_open): erro de leitura nos free pointers\n");
+        err++;
+    }
+    Pointer reference_pointers[4] = { 2, image.meta.disk_size, 0, 0 };
+    if (memcmp(reference_pointers, free_pointers, sizeof(free_pointers))) {
+        fprintf(stderr, "ERRO (image_create/image_open): free pointers não escritos corretamente\n");
+        err++;
+    }
+
+    fseek(image.file, image.meta.block_size, SEEK_SET);
+    Pointer p;
+    if (fread(&p, sizeof(p), 1, image.file) != 1) {
+        fprintf(stderr, "ERRO (image_create/image_open): erro de leitura no bloco 1\n");
+        err++;
+    }
+    if (p != 0) {
+        fprintf(stderr, "ERRO (image_create/image_open): primeiro ponteiro do bloco 1 não escrito corretamente\n");
+        err++;
+    }
+
     fclose(file);
     return err;
 }
