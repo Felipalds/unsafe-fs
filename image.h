@@ -32,7 +32,7 @@ Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint3
     fwrite(&meta, sizeof(meta), 1, file);
 
     // primeiros ponteiros livres
-    Pointer free_pointers[] = { 2, disk_size, 0, 0 };
+    Pointer free_pointers[] = { 2, disk_size-1, 0, 0 };
     fwrite(free_pointers, sizeof(free_pointers), 1, file);
     
     // root dir vazio
@@ -100,22 +100,22 @@ Pointer alloc_block(Image image) {
     }
 }
 
-void free_block(Image image, Pointer block) {
+int free_block(Image image, Pointer block) {
     // não liberar meta e root
     if (block <= 1) {
-        return;
+        return 1;
     }
     fseek(image.file, sizeof(image.meta), SEEK_SET);
     Interval interval;
     for (;;) {
         if (ftell(image.file) >= image.meta.block_size) {
             // erro: deve comprimir gerenciamento de blocos livres
-            return;
+            return 1;
         }
         fread(&interval, sizeof(interval), 1, image.file);
         if (interval.begin <= block && block <= interval.end) {
             // bloco ja estava livre
-            return;
+            return 1;
         }
         if (interval.begin == block+1) {
             interval.begin--;
@@ -133,5 +133,6 @@ void free_block(Image image, Pointer block) {
     }
     fseek(image.file, -sizeof(interval), SEEK_CUR);
     fwrite(&interval, sizeof(interval), 1, image.file);
+    return 0;
 }
 

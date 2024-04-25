@@ -5,7 +5,6 @@
 
 int test_image_create_open() {
     int err = 0;
-
     FILE *file = fopen("./images/image_create.img", "wb+");
     const char *disk_name = "new_image";
     uint16_t block_size = 1024;
@@ -34,7 +33,7 @@ int test_image_create_open() {
         fprintf(stderr, "ERRO (image_create/image_open): erro de leitura nos free pointers\n");
         err++;
     }
-    Pointer reference_pointers[4] = { 2, image.meta.disk_size, 0, 0 };
+    Pointer reference_pointers[4] = { 2, image.meta.disk_size-1, 0, 0 };
     if (memcmp(reference_pointers, free_pointers, sizeof(free_pointers))) {
         fprintf(stderr, "ERRO (image_create/image_open): free pointers não escritos corretamente\n");
         err++;
@@ -55,9 +54,50 @@ int test_image_create_open() {
     return err;
 }
 
+int test_alloc_free_block() {
+    int err = 0;
+    
+    FILE *file = fopen("./images/image_create.img", "wb+");
+    const char *disk_name = "new_image";
+    uint16_t block_size = 1024;
+    uint32_t disk_size = 16;
+    Image image = image_create(file, disk_name, block_size, disk_size);
+    
+    for (Pointer p = 2; p < 16; p++) {
+        if (p != alloc_block(image)) {
+            fprintf(stderr, "ERRO (alloc_block/free_block): Comportamento inesperado na alocação\n");
+            err++;
+        }
+    }
+    
+    Pointer fail = alloc_block(image);
+    if (fail != 0) {
+        fprintf(stderr, "ERRO (alloc_block/free_block): Não há blocos livres, mas alloc_block retornou não-nulo (%u)\n", fail);
+        err++;
+    }
+
+    for (Pointer p = 15; p >= 2; p--) {
+        if (free_block(image, p)) {
+            fprintf(stderr, "ERRO (alloc_block/free_block): Bloco não foi liberado como esperado\n");
+            err++;
+        }
+    }
+
+    for (Pointer p = 2; p < 16; p++) {
+        if (p != alloc_block(image)) {
+            fprintf(stderr, "ERRO (alloc_block/free_block): Comportamento inesperado na alocação após liberamento\n");
+            err++;
+            break;
+        }
+    }
+    
+    return err;
+}
+
 int main() {
     int err = 0;
     err += test_image_create_open();
+    err += test_alloc_free_block();
 
     fprintf(stderr, "%i erros\n", err);
 }
