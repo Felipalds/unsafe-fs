@@ -17,7 +17,6 @@ const char *options[7] = {
     "LIST FREE BLOCKS",
     "IMPORT A FILE FROM SYSTEM",
     "EXPORT A FILE TO SYSTEM"
-
 };
 
 int main(int argc, char *argv[]) {
@@ -100,5 +99,5 @@ int main(int argc, char *argv[]) {
         fflush(stdin);
         scanf("%*c");
     }
-
 }
+
