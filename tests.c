@@ -1,11 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "image.h"
-#include "consts.h"
-#include "utils.h"
+#include "file.h"
 
-
-int test_image_create_open(int *err, int *oks) {
+int test_image_create_open(int *err) {
     FILE *file = fopen("./images/image_create.img", "wb+");
     const char *disk_name = "new_image";
     uint16_t block_size = 1024;
@@ -17,68 +15,48 @@ int test_image_create_open(int *err, int *oks) {
     Image image = image_open(file);
     if (strncmp(disk_name, image.meta.disk_name, sizeof(image.meta.disk_name))) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): disk_name não escrito corretamente\n");
-        *err++;
-    } else {
-        *oks++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
 
     if (block_size != image.meta.block_size) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): block_size não escrito corretamente\n");
-        err++;
-    } else {
-        (*oks)++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
+
     if (disk_size != image.meta.disk_size) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): disk_size não escrito corretamente\n");
-        err++;
-    }else {
-        (*oks)++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
     
     fseek(image.file, sizeof(image.meta), SEEK_SET);
     Pointer free_pointers[4];
     if (fread(free_pointers, sizeof(free_pointers), 1, image.file) != 1) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): erro de leitura nos free pointers\n");
-        err++;
-    } else {
-        oks++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
+
     Pointer reference_pointers[4] = { 2, image.meta.disk_size-1, 0, 0 };
     if (memcmp(reference_pointers, free_pointers, sizeof(free_pointers))) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): free pointers não escritos corretamente\n");
-        err++;
-    } else{
-        oks++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
 
     fseek(image.file, image.meta.block_size, SEEK_SET);
     Pointer p;
     if (fread(&p, sizeof(p), 1, image.file) != 1) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): erro de leitura no bloco 1\n");
-        err++;
-    } else {
-        oks++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
+
     if (p != 0) {
         fprintf(stderr, "☠ ERRO (image_create/image_open): primeiro ponteiro do bloco 1 não escrito corretamente\n");
-        err++;
-    }
-    else {
-        oks++;
-        success("✓ Image disk created successfully");
+        (*err)++;
     }
 
     fclose(file);
 }
 
-int test_alloc_free_block(int *err, int *oks) {
-
+int test_alloc_free_block(int *err) {
     FILE *file = fopen("./images/image_create.img", "wb+");
     const char *disk_name = "new_image";
     uint16_t block_size = 1024;
@@ -88,57 +66,77 @@ int test_alloc_free_block(int *err, int *oks) {
     for (Pointer p = 2; p < 16; p++) {
         if (p != alloc_block(image)) {
             fprintf(stderr, "☠ ERRO (alloc_block/free_block): Comportamento inesperado na alocação\n");
-            err++;
+            (*err)++;
         }
-       else {
-           oks++;
-            success("✓ Image disk created successfully");
-       }
     }
-    
     Pointer fail = alloc_block(image);
     if (fail != 0) {
         fprintf(stderr, "☠ ERRO (alloc_block/free_block): Não há blocos livres, mas alloc_block retornou não-nulo (%u)\n", fail);
-        err++;
-    } else {
-
-        success("✓ Image disk created successfully");
-        oks++;
+        (*err)++;
     }
-
     for (Pointer p = 15; p >= 2; p--) {
         if (free_block(image, p)) {
             fprintf(stderr, "☠ ERRO (alloc_block/free_block): Bloco não foi liberado como esperado\n");
-            err++;
-        } else {
-
-            success("✓ Image disk created successfully");
-            oks++;
+            (*err)++;
         }
     }
-
     for (Pointer p = 2; p < 16; p++) {
         if (p != alloc_block(image)) {
             fprintf(stderr, "☠ ERRO (alloc_block/free_block): Comportamento inesperado na alocação após liberamento\n");
-            err++;
+            (*err)++;
             break;
-        } else {
-            oks++;
-            success("✓ Image disk created successfully");
         }
     }
+}
+
+void test_export_file(int *err) {
+    // criando imagem em branco
+    FILE *file = fopen("./images/test_export_file", "w+");
+    uint16_t block_size = 1024; 
+    uint32_t disk_size = 16;
+    Image image = image_create(file, "export file disk", block_size, disk_size);
     
+    // inserindo um arquivo exemplo
+    const char *data = "#include <stdio.h>\n\nint main(int argc, char **argv) {\n    printf(\"Hello, World\\n\");\n    return 0;\n}\n";
+    size_t data_size = strlen(data);
+    const char *filename = "./images/hello.c";
+    DirEntry entry = {
+        .entry_size = block_size,
+        .name_size = strlen(filename),
+        .entry_type = 1,
+        .file_size = data_size,
+        .pointer = 2,
+    };
+    Pointer pointer_block[2] = { 3, 0 };
+
+    fseek(file, block_size, SEEK_SET);
+    fwrite(&entry, sizeof(entry), 1, file);
+    fseek(file, block_size*2, SEEK_SET);
+    fwrite(pointer_block, sizeof(pointer_block), 1, file);
+    fseek(file, block_size*3, SEEK_SET);
+    fwrite(data, data_size, 1, file);
+
+    // exportando arquivo
+    export_file(image, entry, filename);
+    char read_data[128];
+    FILE *read_file = fopen(filename, "r");
+    if (read_file == NULL) {
+        fprintf(stderr, "☠ ERRO (export_file): Arquivo não foi escrito\n");
+        (*err)++;
+    }
+    fread(read_data, data_size, 1, read_file);
+    read_data[data_size];
+    if (memcmp(data, read_data, data_size)) {
+        fprintf(stderr, "☠ ERRO (export_file): Conteúdo do arquivo não foi escrito corretamente\n");
+        (*err)++;
+    }
 }
 
 int main() {
     int err = 0;
-    int oks = 0;
-    test_image_create_open(&err, &oks);
-    test_alloc_free_block(&err, &oks);
+    test_image_create_open(&err);
+    test_alloc_free_block(&err);
+    test_export_file(&err);
 
     fprintf(stderr, "%i erros\n", err);
-    char success [255];
-
-    sprintf(success, "%d tests passeds\n", oks);
-    print(GREEN, success);
 }
