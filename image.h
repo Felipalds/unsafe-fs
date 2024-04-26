@@ -1,6 +1,9 @@
+#include "consts.h"
+#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h> // for SCNu16 and SCNu32
 
 typedef uint32_t Pointer;
 
@@ -9,6 +12,12 @@ typedef struct __attribute__((__packed__)) {
     uint16_t block_size;
     uint32_t disk_size;
 } MetaBlock;
+
+void view_meta(MetaBlock meta) {
+    printf("DISK NAME: %s\n", meta.disk_name);
+    printf("BLOCK SIZE: %"SCNu16"\n", meta.block_size);
+    printf("DISK SIZE: %"SCNu32"\n", meta.disk_size);
+}
 
 typedef struct __attribute__((__packed__)) {
     Pointer begin;
