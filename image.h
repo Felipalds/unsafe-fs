@@ -1,5 +1,3 @@
-#include "consts.h"
-#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
@@ -14,6 +12,12 @@ typedef struct __attribute__((__packed__)) {
     uint32_t disk_size;
 } MetaBlock;
 
+void view_meta(MetaBlock meta) {
+    printf("DISK NAME: %s\n", meta.disk_name);
+    printf("BLOCK SIZE: %"SCNu16"\n", meta.block_size);
+    printf("DISK SIZE: %"SCNu32"\n", meta.disk_size);
+}
+
 typedef struct __attribute__((__packed__)) {
     Pointer begin;
     Pointer end;
@@ -23,7 +27,6 @@ typedef struct Image {
     MetaBlock meta;
     FILE* file;
 } Image;
-
 
 Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint32_t disk_size) {
     // preparando e escrevendo MetaBlock
@@ -79,6 +82,7 @@ void list_free_blocks(Image image) {
     printf("\n");
 }
 
+// retorna 0 se não encontrar blocos livres
 Pointer alloc_block(Image image) {
     fseek(image.file, sizeof(image.meta), SEEK_SET);
     Interval interval;
@@ -103,6 +107,7 @@ Pointer alloc_block(Image image) {
     }
 }
 
+// retorna 0 se OK, 1 se bloco não foi liberado
 int free_block(Image image, Pointer block) {
     // não liberar meta e root
     if (block <= 1) {
@@ -112,7 +117,7 @@ int free_block(Image image, Pointer block) {
     Interval interval;
     for (;;) {
         if (ftell(image.file) >= image.meta.block_size) {
-            // erro: deve comprimir gerenciamento de blocos livres
+            // erro: deve desfragmentar gerenciamento de blocos livres
             return 1;
         }
         fread(&interval, sizeof(interval), 1, image.file);
@@ -139,12 +144,30 @@ int free_block(Image image, Pointer block) {
     return 0;
 }
 
-void view_meta (Image image) {
-    printf("DISK NAME: %s\n", image.meta.disk_name);
-    printf("BLOCK SIZE: %"SCNu16"\n", image.meta.block_size);
-    printf("DISK SIZE: %"SCNu32"\n", image.meta.disk_size);
+//  para alocar novo bloco:
+//      char *block = read_block(image, pointer, NULL);
+//  para reusar um buffer ja alocado:
+//      block = read_block(image, pointer, bloco);
+void *read_block(Image image, Pointer pointer, void *block) {
+    if (block == NULL) {
+        block = malloc(image.meta.block_size);
+    }
+    fseek(image.file, pointer*image.meta.block_size, SEEK_SET);
+    fread(block, image.meta.block_size, 1, image.file);
+    return block;
 }
 
-void list_root_dir() {
+// escreve em _qualquer_ bloco, inclusive Meta (0)
+// retorna 0 se OK, 1 se não escreveu
+int write_block(Image image, Pointer pointer, const char *data, size_t size) {
+    if (size > image.meta.block_size) {
+        size = image.meta.block_size;
+    }
+    fseek(image.file, pointer*image.meta.block_size, SEEK_SET);
+    if (fwrite(data, size, 1, image.file) != 1) {
+        return 1;
+    }
 
+    return 0;
 }
+
