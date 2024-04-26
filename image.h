@@ -1,9 +1,8 @@
-#include "consts.h"
-#include "utils.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h> // for SCNu16 and SCNu32
+
 
 typedef uint32_t Pointer;
 

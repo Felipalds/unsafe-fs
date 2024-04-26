@@ -51,3 +51,5 @@ void export_file(Image image, DirEntry entry, const char *filename) {
     fclose(out_file);
     return;
 }
+
+void list_root_dir() {}
