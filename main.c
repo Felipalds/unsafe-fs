@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
        }
        const char *disk_name = "Nome do disco";
        image = image_create(file_pointer, disk_name, 1024, 100);
-       cprintf(WHITE, "New image created...\n");
+       cprintf(UNDERLINE, "New image created...\n");
     } else {
         image = image_open(file_pointer);
-        cprintf(WHITE, "Image opened\n");
+        cprintf(UNDERLINE, "Image opened\n");
     }
 
     while(1) {
@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
 
         for (int c = 0; c < sizeof(options)/sizeof(*options); c++) {
             cprintf(GREEN, "%2d ", c + 1);
-            cprintf(WHITE, "%s\n", options[c]);
+            cprintf(UNDERLINE, "%s\n", options[c]);
         }
         fflush(stdin);
         int option;
