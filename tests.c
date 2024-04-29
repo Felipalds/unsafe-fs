@@ -112,6 +112,7 @@ void test_export_file(int *err) {
     };
     Pointer pointer_block[2] = { 3, 0 };
 
+    // escrevendo no primeiro direntry root, segundo bloco ponteiros, terceiro bloco dados
     fseek(file, block_size, SEEK_SET);
     fwrite(&entry, sizeof(entry), 1, file);
     fseek(file, block_size*2, SEEK_SET);
