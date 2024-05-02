@@ -20,7 +20,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y build-essential
 
       - name: Build
-        run: gcc -o test test.c
+        run: gcc -o tests tests.c
 
       - name: Run tests
         run: ./tests
