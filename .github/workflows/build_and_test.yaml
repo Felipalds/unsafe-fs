@@ -28,4 +28,4 @@ jobs:
           if [ $TEST_EXIT_CODE -gt 0 ]; then
             echo "Tests failed with exit code $TEST_EXIT_CODE"
             exit 1
-          fit
+          fi
