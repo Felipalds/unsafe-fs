@@ -54,6 +54,13 @@ int test_image_create_open(int *err) {
         (*err)++;
     }
 
+    fseek(file, 0L, SEEK_END);
+    uint64_t file_size = ftell(file);
+    if(file_size != block_size * disk_size) {
+        ceprintf(RED, "☠ ERRO (immage_create): imagem criada com tamanho errado. \n");
+        (*err)++;
+    }
+
     fclose(file);
 }
 
@@ -141,5 +148,7 @@ int main() {
 
     const char *color = (err == 0) ? GREEN : RED;
     ceprintf(color, "%i erros\n", err);
+
+    return(err);
 }
 

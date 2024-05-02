@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Build
+        run: gcc -o test test.c
+
+      - name: Run tests
+        run: ./tests
+          TEST_EXIT_CODE=$?
+          if [ $TEST_EXIT_CODE -gt 0 ]; then
+            echo "Tests failed with exit code $TEST_EXIT_CODE"
+            exit 1
+          fit
