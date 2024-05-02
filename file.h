@@ -67,33 +67,33 @@ void list_root_dir(Image image) {
 }
 
 int import_file (Image image, char path[256], char file_name[256]) {
-    FILE* file = fopen(path, "r");
-    if(file == NULL) {
-        printf("File couldnt be opened\n");
-    }
-
-    // verificar em quantos blocos o arquivo vai caber
-    // pegar os blocos livres
-    // escrever no img
-    // criar a entry no root dir
-
-    fseek(file, 0L, SEEK_END);
-    uint64_t file_size = ftell(file);
-    Pointer main_pointer;
-
-    if(file_size <= image.meta.block_size) {
-        // file cabe em um bloco
-        main_pointer = alloc_block(image);
-
-
-    } else {
-        // file cabe em mais de um bloco
-        // escrever o file usando em consideracao o tamanho do pointer
-    }
-
-    DirEntry new_entry = { 0, sizeof(file_name), 'f', file_size, main_pointer};
-
-
-    printf("File has %"SCNu64" bytes size \n", file_size);
+//    FILE* file = fopen(path, "r");
+//    if(file == NULL) {
+//        printf("File couldnt be opened\n");
+//    }
+//
+//    // verificar em quantos blocos o arquivo vai caber
+//    // pegar os blocos livres
+//    // escrever no img
+//    // criar a entry no root dir
+//
+//    fseek(file, 0L, SEEK_END);
+//    uint64_t file_size = ftell(file);
+//    Pointer main_pointer;
+//
+//    if(file_size <= image.meta.block_size) {
+//        // file cabe em um bloco
+//        main_pointer = alloc_block(image);
+//
+//
+//    } else {
+//        // file cabe em mais de um bloco
+//        // escrever o file usando em consideracao o tamanho do pointer
+//    }
+//
+//    DirEntry new_entry = { 0, sizeof(file_name), 'f', file_size, main_pointer};
+//
+//
+//    printf("File has %"SCNu64" bytes size \n", file_size);
     return 0;
 }
