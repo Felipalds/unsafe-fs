@@ -54,6 +54,5 @@ dkms.conf
 .idea
 main
 tests
-images/*
 examples
 
