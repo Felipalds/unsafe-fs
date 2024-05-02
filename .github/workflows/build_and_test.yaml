@@ -23,4 +23,4 @@ jobs:
         run: gcc -o tests tests.c
 
       - name: Run tests
-        run: ./tests TEST_EXIT_CODE=$? if [ $TEST_EXIT_CODE -gt 0 ] then echo "Tests failed with exit code $TEST_EXIT_CODE" exit 1 fi
+        run: ./tests
