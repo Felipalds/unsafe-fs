@@ -140,7 +140,7 @@ void test_export_file(int *err) {
 }
 
 int main() {
-    int err = 0;
+    int err = 1;
     test_image_create_open(&err);
     test_alloc_free_block(&err);
     test_export_file(&err);
