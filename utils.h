@@ -5,25 +5,25 @@
 #include <stdarg.h>
 
 
-#define RED "\033[1;31m"
-#define YELLOW "\033[1;33m"
-#define BLUE "\033[1;34m"
-#define GREEN "\033[0;32m\t"
-#define WHITE "\033[4;37m"
-#define RESET "\033[0m"
+#define RESET       "\033[0m"
+#define UNDERLINE   "\033[4m"
+#define RED         "\033[31m"
+#define GREEN       "\033[32m"
+#define YELLOW      "\033[33m"
+#define BLUE        "\033[34m"
 
 
-void ceprintf(const char *COLOR, const char *fmt, ...) {
-   printf("%s", COLOR);
+void ceprintf(const char *color, const char *fmt, ...) {
+   fprintf(stderr, "%s", color);
    va_list args;
    va_start(args, fmt);
    vfprintf(stderr, fmt, args);
    va_end(args);
-   printf("%s", RESET);
+   fprintf(stderr, "%s", RESET);
 }
 
-void cprintf(const char *COLOR, const char *fmt, ...) {
-   printf("%s", COLOR);
+void cprintf(const char *color, const char *fmt, ...) {
+   printf("%s", color);
    va_list args;
    va_start(args, fmt);
    vprintf(fmt, args);

@@ -13,6 +13,8 @@
 - Formatar o disco (Rodrigues)
 // segunda sprint 
 
+// hoje
+- Ler dados de um arquivo (Luiz)
 - Importar arquivos (Luiz)
 - Exportar arquivos (Luiz)
 - Apagar arquivo (Luiz)
