@@ -111,7 +111,6 @@ int main(int argc, char *argv[]) {
                 } else {
                     cprintf(RED, "ERROR IMPORTING FILE!\n");
                 }
-
                 break;
             }
             default: {

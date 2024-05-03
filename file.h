@@ -2,7 +2,7 @@
 #include <inttypes.h>
 
 
-typedef struct DirEntry {
+typedef struct __attribute__((__packed__)) {
     uint16_t entry_size;
     uint16_t name_size;
     char entry_type;

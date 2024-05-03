@@ -178,7 +178,6 @@ int write_block(Image image, Pointer pointer, const char *data, size_t size) {
     if (fwrite(data, size, 1, image.file) != 1) {
         return 1;
     }
-
     return 0;
 }
 

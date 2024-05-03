@@ -148,6 +148,6 @@ int main() {
     const char *color = (err == 0) ? GREEN : RED;
     ceprintf(color, "%i erros\n", err);
 
-    return(err);
+    return err;
 }
 
