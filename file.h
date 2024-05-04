@@ -2,7 +2,7 @@
 #include <inttypes.h>
 
 
-typedef struct DirEntry {
+typedef struct __attribute__((__packed__)) {
     uint16_t entry_size;
     uint16_t name_size;
     char entry_type;
@@ -10,8 +10,7 @@ typedef struct DirEntry {
     Pointer pointer;
 } DirEntry;
 
-void export_file(Image image, DirEntry entry, const char *filename) {
-    FILE *out_file = fopen(filename, "w+");
+void export_file(Image image, DirEntry entry, FILE *out_file) {
     Pointer next_pointer_block = entry.pointer;
     if (next_pointer_block == 0) {
         fclose(out_file);

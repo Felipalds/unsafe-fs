@@ -107,6 +107,7 @@ void test_export_file(int *err) {
     const char *data = "#include <stdio.h>\n\nint main(int argc, char **argv) {\n    printf(\"Hello, World\\n\");\n    return 0;\n}\n";
     size_t data_size = strlen(data);
     const char *filename = "./images/hello.c";
+    FILE *out_file = fopen(filename, "wb");
     DirEntry entry = {
         .entry_size = block_size,
         .name_size = strlen(filename),
@@ -124,7 +125,7 @@ void test_export_file(int *err) {
     fwrite(data, data_size, 1, file);
 
     // exportando arquivo
-    export_file(image, entry, filename);
+    export_file(image, entry, out_file);
     char read_data[128];
     FILE *read_file = fopen(filename, "r");
     if (read_file == NULL) {
@@ -148,6 +149,6 @@ int main() {
     const char *color = (err == 0) ? GREEN : RED;
     ceprintf(color, "%i erros\n", err);
 
-    return(err);
+    return err;
 }
 
