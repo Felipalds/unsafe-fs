@@ -191,7 +191,6 @@ typedef struct {
 //  free(it.pointer_block);
 //  free(buf);
 BlockIter block_iter(Image image, Pointer next_pointer_block) {
-    Pointer *pointer_block = NULL;
     return (BlockIter) {
         .image = image,
         .next_pointer_block = next_pointer_block,
