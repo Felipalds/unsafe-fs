@@ -7,121 +7,99 @@
 #include "file.h"
 #include "utils.h"
 
-#define FILE_NOT_PROVIDED_MESSAGE "Filename not provided. Please, run ./main /PATH/TO/FILE.img and try again"
+void usage() {
+    fprintf(stderr, "USAGE\n");
+    fprintf(stderr, "    --create /path/to/image DISK_NAME     BLOCK_SIZE DISK_SIZE\n");
+    fprintf(stderr, "    --import /path/to/image /path/to/file FILE_NAME\n");
+    fprintf(stderr, "    --export /path/to/image /path/to/file FILE_NAME\n");
+    fprintf(stderr, "    --delete /path/to/image FILE_NAME\n");
+    fprintf(stderr, "    --list   /path/to/image\n");
+}
 
-const char *options[7] = {
-    "FORMAT DISK",
-    "VIEW META",
-    "LIST ROOT DIR",
-    "OPEN FILE",
-    "LIST FREE BLOCKS",
-    "IMPORT A FILE FROM SYSTEM",
-    "EXPORT A FILE TO SYSTEM"
-};
-
-int main(int argc, char *argv[]) {
-    system("clear");
-
-    if (argc == 1) {
-        cprintf(RED, "%s\n", FILE_NOT_PROVIDED_MESSAGE);
-        return 1;
-    }
-    const char *FILENAME = argv[1];
-    if (strlen(FILENAME) == 0 || FILENAME == NULL) {
-        cprintf(RED, "%s\n", FILE_NOT_PROVIDED_MESSAGE);
-        return 1;
-    }
-
-    Image image = { .file = NULL };
-    FILE* file_pointer;
-    file_pointer = fopen(FILENAME, "wrb");
-    if (file_pointer == NULL) {
-       file_pointer = fopen(FILENAME, "wb");
-       if(file_pointer == NULL) {
-           cprintf(RED, "Error opening or creating the file");
-       }
-       const char *disk_name = "Nome do disco";
-       image = image_create(file_pointer, disk_name, 1024, 100);
-       cprintf(UNDERLINE, "New image created...\n");
+int main(int argc, const char **argv) {
+    if (argc == 6 && !strcmp(argv[1], "--create")) {
+        FILE *file = fopen(argv[2], "wbx");
+        if (file == NULL) {
+            fprintf(stderr, "Cannot create file '%s'\n", argv[2]);
+            return 1;
+        }
+        const char *disk_name = argv[3];
+        uint16_t block_size;
+        if (sscanf(argv[4], "%"SCNu16, &block_size) != 1) {
+            usage();
+            return 1;
+        }
+        uint32_t disk_size;
+        if (sscanf(argv[5], "%"SCNu32, &disk_size) != 1) {
+            usage();
+            return 1;
+        }
+        Image image = image_create(file, disk_name, block_size, disk_size);
+        fclose(file);
+    } else if (argc == 5 && !strcmp(argv[1], "--import")) {
+        FILE *file = fopen(argv[2], "rb+");
+        if (file == NULL) {
+            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            return 1;
+        }
+        Image image = image_open(file);
+        FILE *in_file = fopen(argv[3], "rb");
+        if (in_file == NULL) {
+            fprintf(stderr, "Cannot open file '%s'\n", argv[3]);
+            return 1;
+        }
+        const char *file_name = argv[4];
+        // import_file(image, in_file, filename);
+        fclose(in_file);
+        fclose(file);
+    } else if (argc == 5 && !strcmp(argv[1], "--export")) {
+        FILE *file = fopen(argv[2], "rb");
+        if (file == NULL) {
+            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            return 1;
+        }
+        Image image = image_open(file);
+        FILE *out_file = fopen(argv[3], "wbx");
+        if (out_file == NULL) {
+            fprintf(stderr, "Cannot create file '%s'\n", argv[3]);
+            return 1;
+        }
+        // encontrar direntry do arquivo
+        // criar uma função find(filename) -> DirEntry?
+        /*
+         * int err;
+         * DirEntry entry = find(image, argv[4], &err);
+         * if (err) {
+         *     fprintf(stderr, "Cannot find file '%s' in image\n", argv[4]);
+         *     return 1;
+         * }
+         * export_file(image, entry, out_file)
+         */
+        fclose(file);
+        fclose(out_file);
+    } else if (argc == 3 && !strcmp(argv[1], "--delete")) {
+        FILE *file = fopen(argv[2], "rb+");
+        if (file == NULL) {
+            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            return 1;
+        }
+        Image image = image_open(file);
+        /*
+         * delete_file(image, filename)
+         */
+        fclose(file);
+    } else if (argc == 2 && !strcmp(argv[1], "--list")) {
+        FILE *file = fopen(argv[2], "rb+");
+        if (file == NULL) {
+            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            return 1;
+        }
+        Image image = image_open(file);
+        list_root_dir(image);
+        fclose(file);
     } else {
-        image = image_open(file_pointer);
-        cprintf(UNDERLINE, "Image opened\n");
-    }
-
-    while(1) {
-        cprintf(BLUE, "============ UNSAFE FS =============\n");
-        cprintf(YELLOW, "Made in C - By Rodrigues and Rosa\n");
-
-        for (int c = 0; c < sizeof(options)/sizeof(*options); c++) {
-            cprintf(GREEN, "%2d ", c + 1);
-            cprintf(UNDERLINE, "%s\n", options[c]);
-        }
-        fflush(stdin);
-        int option;
-        scanf("%d", &option);
-        switch (option) {
-            case -1:
-                if (image.file) {
-                    fclose(image.file);
-                }
-                return 0;
-            case 1: {
-                char new_disk_name[16];
-                uint16_t block_size;
-                uint32_t disk_size;
-                printf("WHAT WILL BE THE NAME OF YOUR DISK?\n");
-                scanf("%s", new_disk_name);
-                printf("WHAT WILL BE THE BLOCK SIZE IN BYTES?\n");
-                scanf("%"SCNu16"", &block_size);
-                printf("WHAT WILL BE THE DISK SIZE IN BLOCKS?\n");
-                scanf("%d"SCNu32"", &disk_size);
-                image = image_create(file_pointer, new_disk_name, block_size, disk_size);
-            }
-            case 2: {
-                view_meta(image.meta);
-                break;
-            }
-            case 3: {
-                cprintf(BLUE, "Showing all files inside root dir... \n");
-                list_root_dir(image);
-                break;
-            }
-            case 4: {
-                int file_choose;
-                printf("Type which file in root dir do you want to open: \n");
-                scanf("%d", &file_choose);
-                break;
-            }
-            case 5: {
-                list_free_blocks(image);
-                break;
-            }
-            case 6: {
-                char new_file_name[256];
-                char path[256];
-                printf("What is the path of the file?\n");
-                scanf("%s", path);
-
-                printf("What will be the name of the file? (MAX 256 bytes)\n");
-                scanf("%s", new_file_name);
-
-                int err = import_file(image, path, new_file_name);
-                if(err == 0) {
-                    cprintf(GREEN, "File imported successfully!\n");
-                } else {
-                    cprintf(RED, "ERROR IMPORTING FILE!\n");
-                }
-                break;
-            }
-            default: {
-                system("clear");
-                cprintf(RED, "Type a valid option!\n");
-                break;
-            }
-        }
-        cprintf(BLUE, "Press any key to continue...\n");
-        fflush(stdin);
-        scanf("%*c");
+        usage();
+        return 1;
     }
 }
 
