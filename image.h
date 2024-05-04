@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <inttypes.h> // for SCNu16 and SCNu32
+#include <inttypes.h>
 
 typedef uint32_t Pointer;
 
@@ -14,8 +14,8 @@ typedef struct __attribute__((__packed__)) {
 
 void view_meta(MetaBlock meta) {
     printf("DISK NAME: %s\n", meta.disk_name);
-    printf("BLOCK SIZE: %"SCNu16"\n", meta.block_size);
-    printf("DISK SIZE: %"SCNu32"\n", meta.disk_size);
+    printf("BLOCK SIZE: %"PRIu16"\n", meta.block_size);
+    printf("DISK SIZE: %"PRIu32"\n", meta.disk_size);
 }
 
 typedef struct __attribute__((__packed__)) {
@@ -29,7 +29,6 @@ typedef struct Image {
 } Image;
 
 Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint32_t disk_size) {
-
     // preparando e escrevendo MetaBlock
     MetaBlock meta;
     meta.block_size = block_size;
@@ -48,7 +47,7 @@ Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint3
     fwrite(&null_block, sizeof(null_block), 1, file);
 
     // updating the file size
-    fseek(file, block_size * disk_size - 1, SEEK_SET);
+    fseek(file, block_size*disk_size - 1, SEEK_SET);
     fwrite("", 1, 1, file);
 
     return (Image) {

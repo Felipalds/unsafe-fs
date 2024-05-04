@@ -1,7 +1,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 
-
 typedef struct __attribute__((__packed__)) {
     uint16_t entry_size;
     uint16_t name_size;
@@ -42,7 +41,6 @@ void list_root_dir(Image image) {
     printf("Name 1: %s", file_name);
 }
 
-
 Pointer get_last_root_dir_pos ( Image image ) {
     fseek(image.file, image.meta.block_size, SEEK_SET);
 
@@ -61,7 +59,6 @@ int import_file (Image image, const char path[256], const char file_name[256]) {
     if(importing_file == NULL) {
         printf("File couldnt be opened\n");
     }
-
 
     // verificar em quantos blocos o arquivo vai caber
     // pegar os blocos livres
@@ -99,3 +96,4 @@ int import_file (Image image, const char path[256], const char file_name[256]) {
     printf("File written with %"SCNu64" bytes size at %"SCNu32" position \n", file_size, last_root_dir_pos);
     return 0;
 }
+

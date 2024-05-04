@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <inttypes.h> // for SCNu16 and SCNu32
+#include <inttypes.h>
 #include "image.h"
 #include "file.h"
 #include "utils.h"

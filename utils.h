@@ -1,9 +1,5 @@
-//
-// Created by Luiz Felipe Fonseca Rosa on 25/04/24.
-//
 #include <stdio.h>
 #include <stdarg.h>
-
 
 #define RESET       "\033[0m"
 #define UNDERLINE   "\033[4m"
@@ -11,7 +7,6 @@
 #define GREEN       "\033[32m"
 #define YELLOW      "\033[33m"
 #define BLUE        "\033[34m"
-
 
 void ceprintf(const char *color, const char *fmt, ...) {
    fprintf(stderr, "%s", color);
