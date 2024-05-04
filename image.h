@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <inttypes.h> // for SCNu16 and SCNu32
 
 typedef uint32_t Pointer;
