@@ -45,18 +45,11 @@ Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint3
     // root dir vazio
     Pointer null_block = 0;
     fseek(file, block_size, SEEK_SET);
+    fwrite(&null_block, sizeof(null_block), 1, file);
 
     // updating the file size
-    if(fseek(file, block_size * disk_size - 1, SEEK_SET) != 0) {
-        fprintf(stderr, "Error seeking position or streching the file\n");
-        fclose(file);
-    }
-    if(fwrite("", 1, 1, file) != 1) {
-        fprintf(stderr, "Error writing in the last char in the file\n");
-        fclose(file);
-    }
-
-    fflush(file);
+    fseek(file, block_size * disk_size - 1, SEEK_SET);
+    fwrite("", 1, 1, file);
 
     return (Image) {
         .meta = meta,
