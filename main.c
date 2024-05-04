@@ -18,15 +18,14 @@ void usage() {
 
 int main(int argc, const char **argv) {
     if (argc == 6 && !strcmp(argv[1], "--create")) {
-        FILE *file = fopen(argv[2], "wbx");
-        if (file == NULL) {
-            fprintf(stderr, "Cannot create file '%s'\n", argv[2]);
-            return 1;
-        }
         const char *disk_name = argv[3];
         uint16_t block_size;
         if (sscanf(argv[4], "%"SCNu16, &block_size) != 1) {
             usage();
+            return 1;
+        }
+        if (block_size < sizeof(MetaBlock) + 4*sizeof(Interval)) {
+            ceprintf(RED, "Tamanho do bloco %"PRIu16" é muito pequeno\n", block_size);
             return 1;
         }
         uint32_t disk_size;
@@ -34,18 +33,27 @@ int main(int argc, const char **argv) {
             usage();
             return 1;
         }
+        if (disk_size < 2) {
+            ceprintf(RED, "Tamanho do disco %"PRIu32" é muito pequeno\n", disk_size);
+            return 1;
+        }
+        FILE *file = fopen(argv[2], "wbx");
+        if (file == NULL) {
+            ceprintf(RED, "Cannot create file '%s'\n", argv[2]);
+            return 1;
+        }
         Image image = image_create(file, disk_name, block_size, disk_size);
         fclose(file);
     } else if (argc == 5 && !strcmp(argv[1], "--import")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
-            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            ceprintf(RED, "Cannot open image '%s'\n", argv[2]);
             return 1;
         }
         Image image = image_open(file);
         FILE *in_file = fopen(argv[3], "rb");
         if (in_file == NULL) {
-            fprintf(stderr, "Cannot open file '%s'\n", argv[3]);
+            ceprintf(RED, "Cannot open file '%s'\n", argv[3]);
             return 1;
         }
         const char *file_name = argv[4];
@@ -55,13 +63,13 @@ int main(int argc, const char **argv) {
     } else if (argc == 5 && !strcmp(argv[1], "--export")) {
         FILE *file = fopen(argv[2], "rb");
         if (file == NULL) {
-            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            ceprintf(RED, "Cannot open image '%s'\n", argv[2]);
             return 1;
         }
         Image image = image_open(file);
         FILE *out_file = fopen(argv[3], "wbx");
         if (out_file == NULL) {
-            fprintf(stderr, "Cannot create file '%s'\n", argv[3]);
+            ceprintf(RED, "Cannot create file '%s'\n", argv[3]);
             return 1;
         }
         // encontrar direntry do arquivo
@@ -70,7 +78,7 @@ int main(int argc, const char **argv) {
          * int err;
          * DirEntry entry = find(image, argv[4], &err);
          * if (err) {
-         *     fprintf(stderr, "Cannot find file '%s' in image\n", argv[4]);
+         *     ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
          *     return 1;
          * }
          * export_file(image, entry, out_file)
@@ -80,7 +88,7 @@ int main(int argc, const char **argv) {
     } else if (argc == 3 && !strcmp(argv[1], "--delete")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
-            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            ceprintf(RED, "Cannot open image '%s'\n", argv[2]);
             return 1;
         }
         Image image = image_open(file);
@@ -91,7 +99,7 @@ int main(int argc, const char **argv) {
     } else if (argc == 2 && !strcmp(argv[1], "--list")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
-            fprintf(stderr, "Cannot open image '%s'\n", argv[2]);
+            ceprintf(RED, "Cannot open image '%s'\n", argv[2]);
             return 1;
         }
         Image image = image_open(file);
