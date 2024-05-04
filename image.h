@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <inttypes.h> // for SCNu16 and SCNu32
 
 typedef uint32_t Pointer;
@@ -173,5 +174,53 @@ int write_block(Image image, Pointer pointer, const char *data, size_t size) {
         return 1;
     }
     return 0;
+}
+
+typedef struct {
+    Image image;
+    Pointer next_pointer_block;
+    Pointer *pointer_block; // free(pointer_block) pls
+    Pointer *last_pointer;
+    Pointer *current_pointer;
+} BlockIter;
+
+// como iterar blocos de um arquivo
+//  BlockIter it = block_iter(image, entry.pointer);
+//  void *buf = next_block(&it, NULL); // NULL ou algum buffer ja alocado
+//  for (TIPO *block = buf; block != NULL; block = next_block(&it, block)) {
+//      /* faz alguma coisa com block */
+//  }
+//  free(it.pointer_block);
+//  free(buf);
+BlockIter block_iter(Image image, Pointer next_pointer_block) {
+    Pointer *pointer_block = NULL;
+    return (BlockIter) {
+        .image = image,
+        .next_pointer_block = next_pointer_block,
+        .pointer_block = NULL,
+        .last_pointer = NULL,
+        .current_pointer = NULL,
+    };
+}
+
+void *next_block(BlockIter *it, void *data_block) {
+    if (it->next_pointer_block == 0) {
+        return NULL;
+    }
+    if (it->current_pointer == it->last_pointer) {
+        if (it->next_pointer_block == 0) {
+            return NULL;
+        }
+        it->pointer_block = read_block(it->image, it->next_pointer_block, it->pointer_block);
+        it->last_pointer = &it->pointer_block[it->image.meta.block_size / sizeof(Pointer) - 1];
+        it->next_pointer_block = *it->last_pointer;
+        it->current_pointer = it->pointer_block;
+    }
+    if (*it->current_pointer == 0) {
+        return NULL;
+    }
+    data_block = read_block(it->image, *it->current_pointer, data_block);
+    it->current_pointer++;
+    return data_block;
 }
 
