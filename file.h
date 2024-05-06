@@ -8,6 +8,10 @@ typedef struct __attribute__((__packed__)) {
     char name[256];
 } DirEntry;
 
+int delete_entry (Image image, char entry_name[256]) {
+
+}
+
 void export_file(Image image, DirEntry entry, FILE *out_file) {
     if (entry.file_size == 0) {
         return;
