@@ -3,11 +3,10 @@
 
 
 typedef struct __attribute__((__packed__)) {
-    uint16_t entry_size;
-    uint16_t name_size;
-    char entry_type;
     uint64_t file_size;
     Pointer pointer;
+    char type;
+    char name[256];
 } DirEntry;
 
 void export_file(Image image, DirEntry entry, FILE *out_file) {
@@ -52,17 +51,20 @@ void export_file(Image image, DirEntry entry, FILE *out_file) {
     return;
 }
 
+void print_entry(DirEntry entry) {
+    printf("%s --- ", entry.name);
+    printf("%"SCNu64" bytes\n", entry.file_size);
+}
+
 void list_root_dir(Image image) {
-    int c = 0;
     DirEntry dir_entry;
-
     fseek(image.file, image.meta.block_size, SEEK_SET);
+    while(fread(&dir_entry, sizeof(DirEntry), 1, image.file) && dir_entry.file_size > 0 ) {
+        if(dir_entry.type != 'D'){
+            print_entry(dir_entry);
+        }
+    }
 
-    fread(&dir_entry, sizeof(dir_entry), 1, image.file);
-    char file_name[dir_entry.name_size];
-    fread(&file_name, dir_entry.name_size, 1, image.file);
-
-    printf("Name 1: %s", file_name);
 }
 
 
@@ -71,54 +73,41 @@ Pointer get_last_root_dir_pos ( Image image ) {
 
     DirEntry entry;
 
-    fread(&entry, sizeof(DirEntry), 1, image.file);
-    while(entry.entry_size > 0) {
-        fseek(image.file, entry.name_size, SEEK_CUR);
+    while(fread(&entry, sizeof(DirEntry), 1, image.file) && entry.file_size > 0) {
         fread(&entry, sizeof(DirEntry), 1, image.file);
     }
-    return ftell(image.file);
+    // TODO: maybe here is not this way
+    return ftell(image.file) - sizeof(DirEntry);
 }
 
-int import_file (Image image, const char path[256], const char file_name[256]) {
-    FILE* importing_file = fopen(path, "r");
-    if(importing_file == NULL) {
-        printf("File couldnt be opened\n");
-    }
-
-
-    // verificar em quantos blocos o arquivo vai caber
-    // pegar os blocos livres
-    // escrever no img
-    // criar a entry no root dir
-
-    fseek(importing_file, 0L, SEEK_END);
-    uint64_t file_size = ftell(importing_file);
+int import_file (Image image, FILE* new_file, char file_name[256]) {
+    fseek(new_file, 0L, SEEK_END);
+    uint64_t file_size = ftell(new_file);
     printf("File size is %"SCNu64" bytes\n", file_size);
     Pointer main_pointer = alloc_block(image);
+
+    if(!main_pointer) {
+        fprintf(stderr, "Main pointer not allocd successfully!\n");
+    }
     printf("Allocd at %"SCNu32" pointer\n", main_pointer);
 
-    if(file_size <= image.meta.block_size) {
-        // importing_file cabe em um bloco
-        fseek(image.file, main_pointer, SEEK_SET);
-        char ch = fgetc(importing_file);
-        while (ch != EOF) {
-            fputc(ch, image.file);
-            ch = fgetc(importing_file);
-        }
-        fputc(EOF, image.file);
-    } else {
-        // importing_file cabe em mais de um bloco
-        // escrever o importing_file usando em consideracao o tamanho do pointer
-        int num_blocks = file_size / (image.meta.block_size - sizeof(Pointer));
+    uint64_t read_bytes = 0;
+    char *block = malloc(image.meta.block_size);
+    fseek(image.file, main_pointer, SEEK_SET);
 
-    }
+    do {
+        read_bytes += fread(block, , image.meta.block_size, new_file);
+        Pointer pointer = alloc_block(image);
+        write_block(image, pointer, block, );
+    } while(read_bytes < file_size);
 
-    DirEntry new_entry = { strlen(file_name) + file_size + 1, strlen(file_name), 'f', file_size, main_pointer};
+    DirEntry new_entry = { file_size, main_pointer, 'F'};
+    strcpy(new_entry.name, file_name);
+
     Pointer last_root_dir_pos = get_last_root_dir_pos(image);
     fseek(image.file, last_root_dir_pos, SEEK_SET);
-    fwrite(&new_entry, sizeof(new_entry), 1, image.file);
-    fwrite(&file_name, strlen(file_name) + 1, 1, image.file);
+    fwrite(&new_entry, sizeof(DirEntry), 1, image.file);
 
-    printf("File written with %"SCNu64" bytes size at %"SCNu32" position \n", file_size, last_root_dir_pos);
+    printf("File written with %"SCNu64" bytes size at %"SCNu32" position in root dir \n", file_size, last_root_dir_pos);
     return 0;
 }
