@@ -57,10 +57,11 @@ int main(int argc, const char **argv) {
             return 1;
         }
         const char *file_name = argv[4];
-        // import_file(image, in_file, filename);
+        import_file(image, in_file, file_name);
         fclose(in_file);
         fclose(file);
     } else if (argc == 5 && !strcmp(argv[1], "--export")) {
+        // EXPORT
         FILE *file = fopen(argv[2], "rb");
         if (file == NULL) {
             ceprintf(RED, "Cannot open image '%s'\n", argv[2]);

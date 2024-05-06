@@ -10,6 +10,7 @@ typedef struct __attribute__((__packed__)) {
     char disk_name[16];
     uint16_t block_size;
     uint32_t disk_size;
+    uint16_t entries;
 } MetaBlock;
 
 void view_meta(MetaBlock meta) {
