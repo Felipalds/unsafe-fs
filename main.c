@@ -85,7 +85,7 @@ int main(int argc, const char **argv) {
          */
         fclose(file);
         fclose(out_file);
-    } else if (argc == 3 && !strcmp(argv[1], "--delete")) {
+    } else if (argc == 4 && !strcmp(argv[1], "--delete")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
             ceprintf(RED, "Cannot open image '%s'\n", argv[2]);
@@ -96,7 +96,7 @@ int main(int argc, const char **argv) {
          * delete_file(image, filename)
          */
         fclose(file);
-    } else if (argc == 2 && !strcmp(argv[1], "--list")) {
+    } else if (argc == 3 && !strcmp(argv[1], "--list")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
             ceprintf(RED, "Cannot open image '%s'\n", argv[2]);
