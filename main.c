@@ -75,15 +75,14 @@ int main(int argc, const char **argv) {
         }
         // encontrar direntry do arquivo
         // criar uma função find(filename) -> DirEntry?
-        /*
-         * int err;
-         * DirEntry entry = find(image, argv[4], &err);
-         * if (err) {
-         *     ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
-         *     return 1;
-         * }
-         * export_file(image, entry, out_file)
-         */
+         int err;
+         DirEntry entry = find_by_name(image, argv[4], &err);
+        printf("%s %d", entry.name, entry.file_size);
+         if (err) {
+            ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
+            return 1;
+         }
+         export_file(image, entry, out_file);
         fclose(file);
         fclose(out_file);
     } else if (argc == 4 && !strcmp(argv[1], "--delete")) {

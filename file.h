@@ -8,6 +8,10 @@ typedef struct __attribute__((__packed__)) {
     char name[256];
 } DirEntry;
 
+int delete_entry (Image image, char entry_name[256]) {
+
+}
+
 void export_file(Image image, DirEntry entry, FILE *out_file) {
     if (entry.file_size == 0) {
         return;
@@ -40,7 +44,6 @@ void list_root_dir(Image image) {
             print_entry(dir_entry);
         }
     }
-
 }
 
 Pointer get_last_root_dir_pos ( Image image ) {
@@ -61,21 +64,26 @@ int import_file (Image image, FILE* new_file, char file_name[256]) {
     uint64_t file_size = ftell(new_file);
     printf("File size is %"SCNu64" bytes\n", file_size);
     Pointer main_pointer = alloc_block(image);
+    fseek(new_file, 0, SEEK_SET);
 
     if(!main_pointer) {
         fprintf(stderr, "Main pointer not allocd successfully!\n");
+        return 1;
     }
     printf("Allocd at %"SCNu32" pointer\n", main_pointer);
 
-    uint64_t read_bytes = 0;
-    char *block = malloc(image.meta.block_size);
+    char *data_block = malloc(image.meta.block_size);
     fseek(image.file, main_pointer, SEEK_SET);
+    int offset = 1;
+    uint64_t read_bytes = 0;
 
-//    do {
-//        read_bytes += fread(block, , image.meta.block_size, new_file);
-//        Pointer pointer = alloc_block(image);
-//        write_block(image, pointer, block, );
-//    } while(read_bytes < file_size);
+    do {
+        read_bytes += fread(data_block, 1, image.meta.block_size, new_file);
+        Pointer pointer = alloc_block(image);
+        write_block(image, pointer, data_block, image.meta.block_size);
+        write_pointer_block(image, main_pointer, pointer, offset);
+        offset++;
+    } while(read_bytes < file_size);
 
     DirEntry new_entry = { file_size, main_pointer, 'F'};
     strcpy(new_entry.name, file_name);
@@ -88,3 +96,9 @@ int import_file (Image image, FILE* new_file, char file_name[256]) {
     return 0;
 }
 
+DirEntry find_by_name (Image image, char name[256], int* err) {
+    DirEntry entry;
+    fseek(image.file, image.meta.block_size, SEEK_SET);
+    while(fread(&entry, sizeof(DirEntry), 1, image.file) && strcmp(entry.name, name));
+    return entry;
+}
