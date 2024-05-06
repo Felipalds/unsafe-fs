@@ -175,6 +175,14 @@ int write_block(Image image, Pointer pointer, const char *data, size_t size) {
     return 0;
 }
 
+int write_pointer_block(Image image, Pointer pointer, Pointer data, size_t offset) {
+    fseek(image.file, pointer*image.meta.block_size*offset, SEEK_SET);
+    if (fwrite(&data, sizeof(Pointer), 1, image.file) != 1) {
+        return 1;
+    }
+    return 0;
+}
+
 typedef struct {
     Image image;
     Pointer next_pointer_block;
