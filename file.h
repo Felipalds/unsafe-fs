@@ -58,7 +58,6 @@ Pointer get_last_root_dir_pos ( Image image ) {
     return ftell(image.file) - sizeof(DirEntry);
 }
 
-
 int import_file (Image image, FILE* new_file, char file_name[256]) {
     fseek(new_file, 0L, SEEK_END);
     uint64_t file_size = ftell(new_file);
