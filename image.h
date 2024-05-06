@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <inttypes.h> // for SCNu16 and SCNu32
+#include <inttypes.h>
 
 typedef uint32_t Pointer;
 
@@ -15,8 +15,8 @@ typedef struct __attribute__((__packed__)) {
 
 void view_meta(MetaBlock meta) {
     printf("DISK NAME: %s\n", meta.disk_name);
-    printf("BLOCK SIZE: %"SCNu16"\n", meta.block_size);
-    printf("DISK SIZE: %"SCNu32"\n", meta.disk_size);
+    printf("BLOCK SIZE: %"PRIu16"\n", meta.block_size);
+    printf("DISK SIZE: %"PRIu32"\n", meta.disk_size);
 }
 
 typedef struct __attribute__((__packed__)) {
@@ -30,7 +30,6 @@ typedef struct Image {
 } Image;
 
 Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint32_t disk_size) {
-
     // preparando e escrevendo MetaBlock
     MetaBlock meta;
     meta.block_size = block_size;
@@ -46,18 +45,11 @@ Image image_create(FILE *file, const char *disk_name, uint16_t block_size, uint3
     // root dir vazio
     Pointer null_block = 0;
     fseek(file, block_size, SEEK_SET);
+    fwrite(&null_block, sizeof(null_block), 1, file);
 
     // updating the file size
-    if(fseek(file, block_size * disk_size - 1, SEEK_SET) != 0) {
-        fprintf(stderr, "Error seeking position or streching the file\n");
-        fclose(file);
-    }
-    if(fwrite("", 1, 1, file) != 1) {
-        fprintf(stderr, "Error writing in the last char in the file\n");
-        fclose(file);
-    }
-
-    fflush(file);
+    fseek(file, block_size*disk_size - 1, SEEK_SET);
+    fwrite("", 1, 1, file);
 
     return (Image) {
         .meta = meta,
@@ -181,5 +173,52 @@ int write_block(Image image, Pointer pointer, const char *data, size_t size) {
         return 1;
     }
     return 0;
+}
+
+typedef struct {
+    Image image;
+    Pointer next_pointer_block;
+    Pointer *pointer_block; // free(pointer_block) pls
+    Pointer *last_pointer;
+    Pointer *current_pointer;
+} BlockIter;
+
+// como iterar blocos de um arquivo
+//  BlockIter it = block_iter(image, entry.pointer);
+//  void *buf = next_block(&it, NULL); // NULL ou algum buffer ja alocado
+//  for (TIPO *block = buf; block != NULL; block = next_block(&it, block)) {
+//      /* faz alguma coisa com block */
+//  }
+//  free(it.pointer_block);
+//  free(buf);
+BlockIter block_iter(Image image, Pointer next_pointer_block) {
+    return (BlockIter) {
+        .image = image,
+        .next_pointer_block = next_pointer_block,
+        .pointer_block = NULL,
+        .last_pointer = NULL,
+        .current_pointer = NULL,
+    };
+}
+
+void *next_block(BlockIter *it, void *data_block) {
+    if (it->next_pointer_block == 0) {
+        return NULL;
+    }
+    if (it->current_pointer == it->last_pointer) {
+        if (it->next_pointer_block == 0) {
+            return NULL;
+        }
+        it->pointer_block = read_block(it->image, it->next_pointer_block, it->pointer_block);
+        it->last_pointer = &it->pointer_block[it->image.meta.block_size / sizeof(Pointer) - 1];
+        it->next_pointer_block = *it->last_pointer;
+        it->current_pointer = it->pointer_block;
+    }
+    if (*it->current_pointer == 0) {
+        return NULL;
+    }
+    data_block = read_block(it->image, *it->current_pointer, data_block);
+    it->current_pointer++;
+    return data_block;
 }
 

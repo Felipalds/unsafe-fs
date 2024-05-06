@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <inttypes.h> // for SCNu16 and SCNu32
+#include <inttypes.h>
 #include "image.h"
 #include "file.h"
 #include "utils.h"
@@ -86,7 +86,7 @@ int main(int argc, const char **argv) {
          */
         fclose(file);
         fclose(out_file);
-    } else if (argc == 3 && !strcmp(argv[1], "--delete")) {
+    } else if (argc == 4 && !strcmp(argv[1], "--delete")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
             ceprintf(RED, "Cannot open image '%s'\n", argv[2]);

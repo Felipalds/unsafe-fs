@@ -126,6 +126,7 @@ void test_export_file(int *err) {
 
     // exportando arquivo
     export_file(image, entry, out_file);
+    fclose(out_file);
     char read_data[128];
     FILE *read_file = fopen(filename, "r");
     if (read_file == NULL) {
