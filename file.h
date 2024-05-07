@@ -76,13 +76,14 @@ int alloc_entry(Image *image, Pointer *p_block, size_t *p_offset) {
     Pointer which_block = root_dir_pointer_block[block_index];
     size_t which_entry = image->meta.entries % max_entries;
 
+    printf("bi %zu, wb %u, we %zu\n", block_index, which_block, which_entry);
     if (which_block == 0) {
         which_block = alloc_block(*image);
         if (!which_block) {
             free(root_dir_pointer_block);
             return 1;
         }
-        fseek(image->file, image->meta.block_size + which_block*sizeof(Pointer), SEEK_SET);
+        fseek(image->file, image->meta.block_size + block_index*sizeof(Pointer), SEEK_SET);
         fwrite(&which_block, sizeof(which_block), 1, image->file);
     }
     printf("bi %zu, wb %u, we %zu\n", block_index, which_block, which_entry);

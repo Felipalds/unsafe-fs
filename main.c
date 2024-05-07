@@ -97,6 +97,7 @@ int main(int argc, char **argv) {
         }
         Image image = image_open(file);
         /*
+         * DirEntry entry = find_by_name(image, )
          * delete_file(image, filename)
          */
         image_close(image);
