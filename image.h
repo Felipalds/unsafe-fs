@@ -69,6 +69,12 @@ Image image_open(FILE *file) {
     };
 }
 
+void image_close(Image image) {
+    fseek(image.file, 0, SEEK_SET);
+    fwrite(&image.meta, sizeof(image.meta), 1, image.file);
+    fclose(image.file);
+}
+
 void list_free_blocks(Image image) {
     fseek(image.file, sizeof(image.meta), SEEK_SET);
     Interval interval;

@@ -132,3 +132,31 @@ DirEntry find_by_name (Image image, char name[256], int* err) {
     while(fread(&entry, sizeof(DirEntry), 1, image.file) && strcmp(entry.name, name));
     return entry;
 }
+
+void write_entry(Image image, DirEntry entry, Pointer block, long offset) {
+    long byte_offset = block*image.meta.block_size + offset*sizeof(DirEntry);
+    fseek(image.file, byte_offset, SEEK_SET);
+    fwrite(&entry, sizeof(entry), 1, image.file);
+}
+
+int alloc_entry(Image *image, Pointer *p_block, size_t *p_offset) {
+    Pointer *root_dir_pointer_block = read_block(*image, 1, NULL);
+    size_t num_entries = image->meta.block_size / sizeof(DirEntry);
+    size_t which_block = image->meta.entries / num_entries;
+    size_t which_entry = image->meta.entries % num_entries;
+
+    if (root_dir_pointer_block[which_block] == 0) {
+        which_block = alloc_block(*image);
+        if (!which_block) {
+            return 1;
+        }
+        fseek(image->file, image->meta.block_size + which_block*sizeof(Pointer), SEEK_SET);
+        fwrite(&which_block, sizeof(which_block), 1, image->file);
+    }
+
+    *p_block = which_block;
+    *p_offset = which_entry;
+    free(root_dir_pointer_block);
+    image->meta.entries++;
+    return 0;
+}

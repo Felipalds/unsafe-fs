@@ -138,6 +138,29 @@ void test_export_file(int *err) {
         ceprintf(RED, "☠ ERRO (export_file): Conteúdo do arquivo não foi escrito corretamente\n");
         (*err)++;
     }
+    image_close(image);
+}
+
+void test_alloc_entry(int *err) {
+    FILE *file = fopen("./images/test_export_file", "w+");
+    uint16_t block_size = 1024;
+    uint32_t disk_size = 16;
+    Image image = image_create(file, "export file disk", block_size, disk_size);
+
+    DirEntry sample_entry;
+
+    Pointer block;
+    size_t entry;
+    for (int i = 0; i < 16; i++) {
+        if (alloc_entry(&image, &block, &entry)) {
+            ceprintf(RED, "☠ ERRO (alloc_entry): Conteúdo do arquivo não foi escrito corretamente\n");
+            (*err)++;
+            return;
+        }
+        write_entry(image, sample_entry, block, entry);
+    }
+
+    image_close(image);
 }
 
 int main() {
@@ -145,6 +168,7 @@ int main() {
     test_image_create_open(&err);
     test_alloc_free_block(&err);
     test_export_file(&err);
+    test_alloc_entry(&err);
 
     const char *color = (err == 0) ? GREEN : RED;
     ceprintf(color, "%i erros\n", err);
