@@ -2,8 +2,7 @@
 .idea
 main
 tests
-examples/*
-images/*
+images/
 !images/.keep
 
 main.dSYM
