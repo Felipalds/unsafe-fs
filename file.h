@@ -62,12 +62,20 @@ void print_entry(DirEntry entry) {
 }
 
 void list_root_dir(Image image) {
-    DirEntry dir_entry;
-    fseek(image.file, image.meta.block_size, SEEK_SET);
-    while(fread(&dir_entry, sizeof(DirEntry), 1, image.file) && dir_entry.file_size > 0 ) {
-        if(dir_entry.type != 'D'){
-            print_entry(dir_entry);
+    DirEntry *data_block = NULL;
+    Pointer *pointer_block = read_block(image, 1, NULL);
+    size_t block = 0;
+    size_t entry;
+    while (pointer_block[block] && block < image.meta.block_size / sizeof(Pointer)) {
+        data_block = read_block(image, pointer_block[block], data_block);
+        entry = 0;
+        while (entry < image.meta.block_size / sizeof(DirEntry)) {
+            if (data_block[entry].type != 'D') {
+                print_entry(data_block[entry]);
+            }
+            entry++;
         }
+        block++;
     }
 }
 
@@ -82,7 +90,6 @@ Pointer get_last_root_dir_pos ( Image image ) {
     // TODO: maybe here is not this way
     return ftell(image.file) - sizeof(DirEntry);
 }
-
 
 int import_file (Image image, FILE* new_file, char file_name[256]) {
     fseek(new_file, 0L, SEEK_END);
@@ -121,9 +128,66 @@ int import_file (Image image, FILE* new_file, char file_name[256]) {
     return 0;
 }
 
-DirEntry find_by_name (Image image, char name[256], int* err) {
-    DirEntry entry;
+DirEntry find_by_name (Image image, char name[256], int* err, Pointer* pointer,  int* offset) {
+    DirEntry found_entry;
     fseek(image.file, image.meta.block_size, SEEK_SET);
-    while(fread(&entry, sizeof(DirEntry), 1, image.file) && strcmp(entry.name, name));
-    return entry;
+    size_t entry = 0;
+    DirEntry *data_block = NULL;
+    Pointer *pointer_block = read_block(image, 1, NULL);
+    size_t block = 0;
+    while (pointer_block[block] && block < image.meta.block_size / sizeof(Pointer)) {
+        data_block = read_block(image, pointer_block[block], data_block);
+        entry = 0;
+        while (entry < image.meta.block_size / sizeof(DirEntry)) {
+            if (data_block[entry].type != 'D' && !strcmp(name, found_entry.name)) {
+                found_entry = data_block[entry];
+                break;
+            }
+            entry++;
+        }
+        block++;
+    }
+    free(data_block);
+    free(pointer_block);
+    return found_entry;
 }
+
+int clean_block(Image image, Pointer p) {
+    fseek(image.file, p, SEEK_SET);
+    for(int c = 0; c < image.meta.block_size; c++) {
+        fputc(0, image.file);
+    }
+}
+
+void update_entry (Image image, DirEntry entry, int offset) {
+    fseek(image.file, image.meta.block_size + offset * sizeof(DirEntry), SEEK_SET);
+}
+
+//int delete_entry (Image image, char entry_name[256]) {
+//    int find_errors = 0;
+//    int offset = 0;
+//    DirEntry entry = find_by_name(image, entry_name, &find_errors, &offset);
+//    if (find_errors > 0) {
+//        fprintf(stderr, "%d errors findind the name of file\n", find_errors);
+//    }
+//    Pointer main_pointer = entry.pointer;
+//
+//    fseek(image.file, main_pointer, SEEK_SET);
+//    int block_read = 0;
+//    Pointer p;
+//
+//    while (block_read < sizeof(Pointer)) {
+//        fread(&p, sizeof (Pointer), 1, image.file);
+//        free_block(image, p);
+//        block_read+=sizeof (Pointer);
+//    }
+//
+//    fseek(image.file, main_pointer, SEEK_SET);
+//    free_block(image, main_pointer);
+//    clean_block(image, main_pointer);
+//
+//    entry.type = 'D';
+//    update_entry(image, entry, offset);
+//}
+
+
