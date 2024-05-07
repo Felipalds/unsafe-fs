@@ -146,13 +146,12 @@ Pointer get_last_root_dir_pos ( Image image ) {
 }
 
 int import_file(Image *image, FILE* new_file, const char *file_name) {
-    printf("penis 1\n");
     fseek(new_file, 0L, SEEK_END);
     uint64_t file_size = ftell(new_file);
     printf("File size is %"SCNu64" bytes\n", file_size);
     Pointer main_pointer = alloc_block(*image);
+    Pointer *pointer_block = calloc(1, image.meta.block_size);
     fseek(new_file, 0, SEEK_SET);
-    printf("penis 2\n");
 
     if (!main_pointer) {
         fprintf(stderr, "Main pointer not allocd successfully!\n");
@@ -165,16 +164,15 @@ int import_file(Image *image, FILE* new_file, const char *file_name) {
     int offset = 1;
     uint64_t read_bytes = 0;
 
-    printf("penis 3\n");
     do {
         read_bytes += fread(data_block, 1, image->meta.block_size, new_file);
         Pointer pointer = alloc_block(*image);
         write_block(*image, pointer, data_block, image->meta.block_size);
-        write_pointer_block(*image, main_pointer, pointer, offset);
+        pointer_block[offset++] = pointer;
         offset++;
         printf("penis loop\n");
     } while (read_bytes < file_size);
-    printf("penis out\n");
+    write_block(image, main_pointer, pointer_block, image.meta.block_size);
 
     DirEntry new_entry = {
         .file_size = file_size,
