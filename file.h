@@ -8,8 +8,30 @@ typedef struct __attribute__((__packed__)) {
     char name[256];
 } DirEntry;
 
-int delete_entry (Image image, char entry_name[256]) {
-
+int delete_entry(Image image, const char *entry_name) {
+    /*
+     *  Pointer entry_block;
+     *  size_t entry_offset;
+     *  DirEntry entry = find_entry_by_name(entry_name);
+     *  if (entry.type == 'D') {
+     *      return 1;
+     *  }
+     *  // escreve novo entry como tipo 'D'
+     *  uint64_t offset = entry_block*image.meta.block_size + entry_offset*sizeof(DirEntry);
+     *  entry.type = 'D';
+     *  fseek(image.file, offset, SEEK_SET);
+     *  fwrite(&entry, sizeof(entry), 1, image.file);
+     *  // libera todos os blocos do pointer block
+     *  Pointer *pointer_block = read_block(image, entry.pointer, NULL);
+     *  Pointer *end = &pointer_block[image.meta.block_size / sizeof(Pointer)];
+     *  for (Pointer *pointer = pointer_block; pointer < end; pointer++) {
+     *      free_block(image, *pointer);
+     *  }
+     *  // e libera próprio pointer block
+     *  free_block(image, entry.pointer);
+     *  free(pointer_block);
+     *  return 0;
+     */
 }
 
 void export_file(Image image, DirEntry entry, FILE *out_file) {
