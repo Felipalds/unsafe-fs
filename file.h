@@ -96,21 +96,6 @@ int alloc_entry(Image *image, Pointer *p_block, size_t *p_offset) {
 }
 
 void list_root_dir(Image image) {
-    // DirEntry *data_block = NULL;
-    // Pointer *pointer_block = read_block(image, 1, NULL);
-    // size_t block = 0;
-    // size_t entry;
-    // while (pointer_block[block] && block < image.meta.block_size / sizeof(Pointer)) {
-    //     data_block = read_block(image, pointer_block[block], data_block);
-    //     entry = 0;
-    //     while (entry < image.meta.block_size / sizeof(DirEntry)) {
-    //         if (data_block[entry].type != 'D') {
-    //             print_entry(data_block[entry]);
-    //         }
-    //         entry++;
-    //     }
-    //     block++;
-    // }
     printf("list root dir\n");
     Pointer *pointer_block = read_block(image, 1, NULL);
     Pointer *last_pointer = &pointer_block[image.meta.block_size/sizeof(Pointer)];
@@ -203,27 +188,35 @@ int import_file(Image *image, FILE* new_file, const char *file_name) {
 }
 
 DirEntry find_by_name(Image image, char name[256], int* err, Pointer* pointer,  int* offset) {
-    DirEntry found_entry;
-    fseek(image.file, image.meta.block_size, SEEK_SET);
-    size_t entry = 0;
-    DirEntry *data_block = NULL;
+    DirEntry found;
+    printf("finding file!!!!!!!!!!\n");
     Pointer *pointer_block = read_block(image, 1, NULL);
-    size_t block = 0;
-    while (pointer_block[block] && block < image.meta.block_size / sizeof(Pointer)) {
-        data_block = read_block(image, pointer_block[block], data_block);
-        entry = 0;
-        while (entry < image.meta.block_size / sizeof(DirEntry)) {
-            if (data_block[entry].type != 'D' && !strcmp(name, found_entry.name)) {
-                found_entry = data_block[entry];
+    Pointer *last_pointer = &pointer_block[image.meta.block_size/sizeof(Pointer)];
+    DirEntry *block = NULL;
+    bool find = false;
+    uint16_t rem_entries = image.meta.entries;
+    for (Pointer *cur_pointer = pointer_block; cur_pointer != last_pointer && !find; cur_pointer++) {
+        block = read_block(image, *cur_pointer, block);
+        DirEntry *last_entry = &block[image.meta.block_size / sizeof(DirEntry)];
+        for (DirEntry *entry = block; entry != last_entry; entry++) {
+            printf("dir_entry\n");
+            if (rem_entries == 0) {
+                free(block);
+                free(pointer_block);
+                fprintf(stderr, "FILE DOES NOT EXISTS YOUR PIECE OF SHIT\n");
+                exit(1);
+            }
+            if (entry->type != 'D' && !strcmp(entry->name, name)) {
+                found = *entry;
+                find = true;
                 break;
             }
-            entry++;
+            rem_entries--;
+            print_entry(*entry);
         }
-        block++;
     }
-    free(data_block);
-    free(pointer_block);
-    return found_entry;
+
+    return found;
 }
 
 
