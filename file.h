@@ -9,29 +9,26 @@ typedef struct __attribute__((__packed__)) {
 } DirEntry;
 
 int delete_entry(Image image, const char *entry_name) {
-    /*
-     *  Pointer entry_block;
-     *  size_t entry_offset;
-     *  DirEntry entry = find_entry_by_name(entry_name);
-     *  if (entry.type == 'D') {
-     *      return 1;
-     *  }
-     *  // escreve novo entry como tipo 'D'
-     *  uint64_t offset = entry_block*image.meta.block_size + entry_offset*sizeof(DirEntry);
-     *  entry.type = 'D';
-     *  fseek(image.file, offset, SEEK_SET);
-     *  fwrite(&entry, sizeof(entry), 1, image.file);
-     *  // libera todos os blocos do pointer block
-     *  Pointer *pointer_block = read_block(image, entry.pointer, NULL);
-     *  Pointer *end = &pointer_block[image.meta.block_size / sizeof(Pointer)];
-     *  for (Pointer *pointer = pointer_block; pointer < end; pointer++) {
-     *      free_block(image, *pointer);
-     *  }
-     *  // e libera próprio pointer block
-     *  free_block(image, entry.pointer);
-     *  free(pointer_block);
-     *  return 0;
-     */
+    Pointer entry_block;
+    size_t entry_offset;
+    DirEntry entry = find_by_name(entry_name);
+    if (entry.type == 'D') {
+        return 1;
+    }
+    // escreve novo entry como tipo 'D'
+    uint64_t offset = entry_block*image.meta.block_size + entry_offset*sizeof(DirEntry);
+    entry.type = 'D';
+    fseek(image.file, offset, SEEK_SET);
+    fwrite(&entry, sizeof(entry), 1, image.file);
+    // libera todos os blocos do pointer block
+    Pointer *pointer_block = read_block(image, entry.pointer, NULL);
+    Pointer *end = &pointer_block[image.meta.block_size / sizeof(Pointer)];
+    for (Pointer *pointer = pointer_block; *pointer && pointer < end; pointer++) {
+        free_block(image, *pointer);
+    }
+    // e libera próprio pointer block
+    free_block(image, entry.pointer);
+    free(pointer_block);
     return 0;
 }
 
@@ -41,10 +38,10 @@ void export_file(Image image, DirEntry entry, FILE *out_file) {
     }
     uint64_t rem_bytes = entry.file_size;
     Pointer *pointer_block = read_block(image, entry.pointer, NULL);
+    Pointer *end = &pointer_block[image.meta.block_size/sizeof(Pointer)];
     char *data_block = NULL; 
-    size_t num_pointers = image.meta.block_size/sizeof(Pointer);
-    for (size_t block = 0; block < num_pointers && pointer_block[block]; block++) {
-        data_block = read_block(image, pointer_block[block], data_block);
+    for (Pointer *cur = pointer_block; *cur && cur != end; cur++) {
+        data_block = read_block(image, *block, data_block);
         if (rem_bytes >= image.meta.block_size) {
             fwrite(data_block, image.meta.block_size, 1, out_file);
             rem_bytes -= image.meta.block_size;
