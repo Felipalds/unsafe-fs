@@ -52,6 +52,8 @@ int import_file_new(Image image, const char *name, FILE *in_file) {
     // tamanho do arquivo
     fseek(in_file, 0, SEEK_END);
     uint64_t file_size = ftell(in_file);
+    printf("Importing a file with %d\n", file_size);
+
     Pointer pointer_block = 0;
     if (file_size != 0) {
         // aloca novo pointer block
@@ -65,9 +67,11 @@ int import_file_new(Image image, const char *name, FILE *in_file) {
     DirEntry new_entry = {
         .file_size = file_size,
         .type = 'F',
-        .pointer = pointer_block
+        .pointer = pointer_block,
+        .name = {0}
     };
     strncpy(new_entry.name, name, sizeof(new_entry.name));
+    printf("New file: %s\n", new_entry.name);
 
     fseek(image.file, block*image.meta.block_size + entry*sizeof(DirEntry), SEEK_SET);
     fwrite(&new_entry, sizeof(new_entry), 1, image.file);
