@@ -3,9 +3,11 @@
 #include <stdint.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include "image.h"
 #include "file.h"
 #include "utils.h"
+#include "new_import_file.h"
 
 void usage() {
     fprintf(stderr, "USAGE\n");
@@ -57,7 +59,7 @@ int main(int argc, const char **argv) {
             return 1;
         }
         const char *file_name = argv[4];
-        import_file(image, in_file, file_name);
+        import_file_new(image, file_name, in_file);
         fclose(in_file);
         fclose(file);
     } else if (argc == 5 && !strcmp(argv[1], "--export")) {
@@ -75,14 +77,14 @@ int main(int argc, const char **argv) {
         }
         // encontrar direntry do arquivo
         // criar uma função find(filename) -> DirEntry?
-         int err;
-         DirEntry entry = find_by_name(image, argv[4], &err);
+        int err;
+        DirEntry entry = find_by_name(image, argv[4], &err);
         printf("%s %d", entry.name, entry.file_size);
-         if (err) {
-            ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
-            return 1;
-         }
-         export_file(image, entry, out_file);
+        if (err) {
+           ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
+           return 1;
+        }
+        export_file(image, entry, out_file);
         fclose(file);
         fclose(out_file);
     } else if (argc == 4 && !strcmp(argv[1], "--delete")) {

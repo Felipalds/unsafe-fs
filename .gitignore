@@ -6,3 +6,4 @@ examples/*
 images/*
 !images/.keep
 
+main.dSYM

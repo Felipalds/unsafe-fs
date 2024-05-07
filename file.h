@@ -34,12 +34,20 @@ void print_entry(DirEntry entry) {
 }
 
 void list_root_dir(Image image) {
-    DirEntry dir_entry;
-    fseek(image.file, image.meta.block_size, SEEK_SET);
-    while(fread(&dir_entry, sizeof(DirEntry), 1, image.file) && dir_entry.file_size > 0 ) {
-        if(dir_entry.type != 'D'){
-            print_entry(dir_entry);
+    DirEntry *data_block = NULL;
+    Pointer *pointer_block = read_block(image, 1, NULL);
+    size_t block = 0;
+    size_t entry;
+    while (pointer_block[block] && block < image.meta.block_size / sizeof(Pointer)) {
+        data_block = read_block(image, pointer_block[block], data_block);
+        entry = 0;
+        while (entry < image.meta.block_size / sizeof(DirEntry)) {
+            if (data_block[entry].type != 'D') {
+                print_entry(data_block[entry]);
+            }
+            entry++;
         }
+        block++;
     }
 }
 
@@ -54,7 +62,6 @@ Pointer get_last_root_dir_pos ( Image image ) {
     // TODO: maybe here is not this way
     return ftell(image.file) - sizeof(DirEntry);
 }
-
 
 int import_file (Image image, FILE* new_file, char file_name[256]) {
     fseek(new_file, 0L, SEEK_END);
