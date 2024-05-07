@@ -95,4 +95,5 @@ int import_file_new(Image image, const char *name, FILE *in_file) {
 
     free(data_block);
     free(pointer_block_data);
+    return 0;
 }

@@ -18,7 +18,7 @@ void usage() {
     fprintf(stderr, "    --list   /path/to/image\n");
 }
 
-int main(int argc, const char **argv) {
+int main(int argc, char **argv) {
     if (argc == 6 && !strcmp(argv[1], "--create")) {
         const char *disk_name = argv[3];
         uint16_t block_size;
@@ -45,7 +45,7 @@ int main(int argc, const char **argv) {
             return 1;
         }
         Image image = image_create(file, disk_name, block_size, disk_size);
-        fclose(file);
+        image_close(image);
     } else if (argc == 5 && !strcmp(argv[1], "--import")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
@@ -59,9 +59,9 @@ int main(int argc, const char **argv) {
             return 1;
         }
         const char *file_name = argv[4];
-        import_file_new(image, file_name, in_file);
+        import_file(&image, in_file, file_name);
         fclose(in_file);
-        fclose(file);
+        image_close(image);
     } else if (argc == 5 && !strcmp(argv[1], "--export")) {
         // EXPORT
         FILE *file = fopen(argv[2], "rb");
@@ -78,16 +78,16 @@ int main(int argc, const char **argv) {
         // encontrar direntry do arquivo
         // criar uma função find(filename) -> DirEntry?
         int err;
-        Pointer* pointer;
-        int* offset;
-        DirEntry entry = find_by_name(image, argv[4], &err, pointer, offset);
+        Pointer pointer;
+        int offset;
+        DirEntry entry = find_by_name(image, argv[4], &err, &pointer, &offset);
         printf("%s %"SCNu64"", entry.name, entry.file_size);
         if (err) {
            ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
            return 1;
         }
         export_file(image, entry, out_file);
-        fclose(file);
+        image_close(image);
         fclose(out_file);
     } else if (argc == 4 && !strcmp(argv[1], "--delete")) {
         FILE *file = fopen(argv[2], "rb+");
@@ -99,7 +99,7 @@ int main(int argc, const char **argv) {
         /*
          * delete_file(image, filename)
          */
-        fclose(file);
+        image_close(image);
     } else if (argc == 3 && !strcmp(argv[1], "--list")) {
         FILE *file = fopen(argv[2], "rb+");
         if (file == NULL) {
@@ -108,7 +108,7 @@ int main(int argc, const char **argv) {
         }
         Image image = image_open(file);
         list_root_dir(image);
-        fclose(file);
+        image_close(image);
     } else {
         usage();
         return 1;

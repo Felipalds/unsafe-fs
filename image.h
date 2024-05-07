@@ -61,7 +61,6 @@ Image image_open(FILE *file) {
     fseek(file, 0, SEEK_SET);
     MetaBlock meta;
     fread(&meta, sizeof(meta), 1, file); 
-    // TODO checar erro de leitura
     
     return (Image) {
         .meta = meta,
@@ -93,6 +92,13 @@ void list_free_blocks(Image image) {
     printf("\n");
 }
 
+void clean_block(Image image, Pointer p) {
+    fseek(image.file, p*image.meta.block_size, SEEK_SET);
+    for(int c = 0; c < image.meta.block_size; c++) {
+        fputc(0, image.file);
+    }
+}
+
 // retorna 0 se não encontrar blocos livres
 Pointer alloc_block(Image image) {
     fseek(image.file, sizeof(image.meta), SEEK_SET);
@@ -114,6 +120,7 @@ Pointer alloc_block(Image image) {
         interval.begin++;
         fseek(image.file, -sizeof(interval), SEEK_CUR);
         fwrite(&interval, sizeof(interval), 1, image.file);
+        clean_block(image, alloc);
         return alloc;
     }
 }
