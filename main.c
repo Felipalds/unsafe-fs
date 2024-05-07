@@ -78,8 +78,10 @@ int main(int argc, const char **argv) {
         // encontrar direntry do arquivo
         // criar uma função find(filename) -> DirEntry?
         int err;
-        DirEntry entry = find_by_name(image, argv[4], &err);
-        printf("%s %d", entry.name, entry.file_size);
+        Pointer* pointer;
+        int* offset;
+        DirEntry entry = find_by_name(image, argv[4], &err, pointer, offset);
+        printf("%s %"SCNu64"", entry.name, entry.file_size);
         if (err) {
            ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
            return 1;

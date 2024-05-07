@@ -16,6 +16,7 @@ void find_root_dir_gap(Image image, Pointer *p_block, size_t *p_entry) {
         }
         block++;
     }
+
     // temos que alocar novo bloco no root dir
     if (!found_empty) {
         entry = 0;
@@ -52,7 +53,7 @@ int import_file_new(Image image, const char *name, FILE *in_file) {
     // tamanho do arquivo
     fseek(in_file, 0, SEEK_END);
     uint64_t file_size = ftell(in_file);
-    printf("Importing a file with %d\n", file_size);
+    printf("Importing a file with %"SCNu64"\n", file_size);
 
     Pointer pointer_block = 0;
     if (file_size != 0) {
