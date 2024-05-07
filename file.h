@@ -110,8 +110,13 @@ int import_file (Image image, FILE* new_file, char file_name[256]) {
         offset++;
     } while(read_bytes < file_size);
 
-    DirEntry new_entry = { file_size, main_pointer, 'F'};
-    strcpy(new_entry.name, file_name);
+    DirEntry new_entry = {
+        .file_size = file_size,
+        .pointer = main_pointer,
+        .type = 'F',
+        .name = { 0 },
+    };
+    strncpy(new_entry.name, file_name, sizeof(new_entry.name));
 
     Pointer last_root_dir_pos = get_last_root_dir_pos(image);
     fseek(image.file, last_root_dir_pos, SEEK_SET);
