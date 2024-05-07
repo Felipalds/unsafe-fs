@@ -80,12 +80,10 @@ int main(int argc, char **argv) {
         Pointer pointer;
         int offset;
         DirEntry entry = find_by_name(image, argv[4], &err, &pointer, &offset);
-        printf("%s %"SCNu64"", entry.name, entry.file_size);
         if (err) {
            ceprintf(RED, "Cannot find file '%s' in image\n", argv[4]);
            return 1;
         }
-        printf("Exporting right noiw\n");
         export_file(image, entry, out_file);
         image_close(image);
         fclose(out_file);
@@ -96,12 +94,11 @@ int main(int argc, char **argv) {
             return 1;
         }
         Image image = image_open(file);
-        int err;
-        Pointer pointer;
-        int offset;
-        DirEntry entry = find_by_name(image, argv[3], &err, &pointer, &offset);
-        printf("FILE: %s", entry.name);
-//         delete_file(image, filename)
+        // int err;
+        // Pointer pointer;
+        // int offset;
+        // DirEntry entry = find_by_name(image, argv[3], &err, &pointer, &offset);
+        delete_entry(&image, argv[4]);
         image_close(image);
     } else if (argc == 3 && !strcmp(argv[1], "--list")) {
         FILE *file = fopen(argv[2], "rb+");

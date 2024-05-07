@@ -8,26 +8,64 @@ typedef struct __attribute__((__packed__)) {
     char name[256];
 } DirEntry;
 
-int delete_entry(Image image, const char *entry_name) {
+void print_entry(DirEntry entry) {
+    printf("%s --- ", entry.name);
+    printf("%"SCNu64" bytes\n", entry.file_size);
+}
+
+DirEntry find_by_name(Image image, const char *name, int* err, Pointer* pointer,  int* offset) {
+    DirEntry found;
+    printf("finding file!!!!!!!!!!\n");
+    Pointer *pointer_block = read_block(image, 1, NULL);
+    Pointer *last_pointer = &pointer_block[image.meta.block_size/sizeof(Pointer)];
+    DirEntry *block = NULL;
+    bool find = false;
+    uint16_t rem_entries = image.meta.entries;
+    for (Pointer *cur_pointer = pointer_block; cur_pointer != last_pointer && !find; cur_pointer++) {
+        block = read_block(image, *cur_pointer, block);
+        DirEntry *last_entry = &block[image.meta.block_size / sizeof(DirEntry)];
+        for (DirEntry *entry = block; entry != last_entry; entry++) {
+            printf("dir_entry\n");
+            if (rem_entries == 0) {
+                free(block);
+                free(pointer_block);
+                fprintf(stderr, "file does not exist");
+                exit(1);
+            }
+            if (entry->type != 'D' && !strcmp(entry->name, name)) {
+                found = *entry;
+                find = true;
+                break;
+            }
+            rem_entries--;
+            print_entry(*entry);
+        }
+    }
+
+    return found;
+}
+
+int delete_entry(Image *image, const char *entry_name) {
+    int err = 0;
     Pointer entry_block;
-    size_t entry_offset;
-    DirEntry entry = find_by_name(entry_name);
+    int entry_offset;
+    DirEntry entry = find_by_name(*image, entry_name, &err, &entry_block, &entry_offset);
     if (entry.type == 'D') {
         return 1;
     }
     // escreve novo entry como tipo 'D'
-    uint64_t offset = entry_block*image.meta.block_size + entry_offset*sizeof(DirEntry);
+    uint64_t offset = entry_block*image->meta.block_size + entry_offset*sizeof(DirEntry);
     entry.type = 'D';
-    fseek(image.file, offset, SEEK_SET);
-    fwrite(&entry, sizeof(entry), 1, image.file);
+    fseek(image->file, offset, SEEK_SET);
+    fwrite(&entry, sizeof(entry), 1, image->file);
     // libera todos os blocos do pointer block
-    Pointer *pointer_block = read_block(image, entry.pointer, NULL);
-    Pointer *end = &pointer_block[image.meta.block_size / sizeof(Pointer)];
+    Pointer *pointer_block = read_block(*image, entry.pointer, NULL);
+    Pointer *end = &pointer_block[image->meta.block_size / sizeof(Pointer)];
     for (Pointer *pointer = pointer_block; *pointer && pointer < end; pointer++) {
-        free_block(image, *pointer);
+        free_block(*image, *pointer);
     }
     // e libera próprio pointer block
-    free_block(image, entry.pointer);
+    free_block(*image, entry.pointer);
     free(pointer_block);
     return 0;
 }
@@ -40,8 +78,8 @@ void export_file(Image image, DirEntry entry, FILE *out_file) {
     Pointer *pointer_block = read_block(image, entry.pointer, NULL);
     Pointer *end = &pointer_block[image.meta.block_size/sizeof(Pointer)];
     char *data_block = NULL; 
-    for (Pointer *cur = pointer_block; *cur && cur != end; cur++) {
-        data_block = read_block(image, *block, data_block);
+    for (Pointer *cur = pointer_block; cur != end; cur++) {
+        data_block = read_block(image, *cur, data_block);
         if (rem_bytes >= image.meta.block_size) {
             fwrite(data_block, image.meta.block_size, 1, out_file);
             rem_bytes -= image.meta.block_size;
@@ -54,14 +92,8 @@ void export_file(Image image, DirEntry entry, FILE *out_file) {
     free(pointer_block);
 }
 
-void print_entry(DirEntry entry) {
-    printf("%s --- ", entry.name);
-    printf("%"SCNu64" bytes\n", entry.file_size);
-}
-
 void write_entry(Image image, DirEntry entry, Pointer block, long offset) {
     long byte_offset = block*image.meta.block_size + offset*sizeof(DirEntry);
-    printf("write to offset %lu\n", byte_offset);
     fseek(image.file, byte_offset, SEEK_SET);
     fwrite(&entry, sizeof(entry), 1, image.file);
 }
@@ -73,7 +105,6 @@ int alloc_entry(Image *image, Pointer *p_block, size_t *p_offset) {
     Pointer which_block = root_dir_pointer_block[block_index];
     size_t which_entry = image->meta.entries % max_entries;
 
-    printf("bi %zu, wb %u, we %zu\n", block_index, which_block, which_entry);
     if (which_block == 0) {
         which_block = alloc_block(*image);
         if (!which_block) {
@@ -83,7 +114,6 @@ int alloc_entry(Image *image, Pointer *p_block, size_t *p_offset) {
         fseek(image->file, image->meta.block_size + block_index*sizeof(Pointer), SEEK_SET);
         fwrite(&which_block, sizeof(which_block), 1, image->file);
     }
-    printf("bi %zu, wb %u, we %zu\n", block_index, which_block, which_entry);
 
     *p_block = which_block;
     *p_offset = which_entry;
@@ -93,17 +123,14 @@ int alloc_entry(Image *image, Pointer *p_block, size_t *p_offset) {
 }
 
 void list_root_dir(Image image) {
-    printf("list root dir\n");
     Pointer *pointer_block = read_block(image, 1, NULL);
     Pointer *last_pointer = &pointer_block[image.meta.block_size/sizeof(Pointer)];
     DirEntry *block = NULL;
     uint16_t rem_entries = image.meta.entries;
     for (Pointer *cur_pointer = pointer_block; cur_pointer != last_pointer; cur_pointer++) {
-        printf("pointer %u\n", *cur_pointer);
         block = read_block(image, *cur_pointer, block);
         DirEntry *last_entry = &block[image.meta.block_size / sizeof(DirEntry)];
         for (DirEntry *entry = block; entry != last_entry; entry++) {
-            printf("dir_entry\n");
             if (rem_entries == 0) {
                 free(block);
                 free(pointer_block);
@@ -118,24 +145,13 @@ void list_root_dir(Image image) {
     }
 }
 
-Pointer get_last_root_dir_pos ( Image image ) {
-    fseek(image.file, image.meta.block_size, SEEK_SET);
-
-    DirEntry entry;
-
-    while(fread(&entry, sizeof(DirEntry), 1, image.file) && entry.file_size > 0) {
-        fread(&entry, sizeof(DirEntry), 1, image.file);
-    }
-    // TODO: maybe here is not this way
-    return ftell(image.file) - sizeof(DirEntry);
-}
 
 int import_file(Image *image, FILE* new_file, const char *file_name) {
     fseek(new_file, 0L, SEEK_END);
     uint64_t file_size = ftell(new_file);
     printf("File size is %"SCNu64" bytes\n", file_size);
     Pointer main_pointer = alloc_block(*image);
-    Pointer *pointer_block = calloc(1, image.meta.block_size);
+    Pointer *pointer_block = calloc(1, image->meta.block_size);
     fseek(new_file, 0, SEEK_SET);
 
     if (!main_pointer) {
@@ -155,9 +171,8 @@ int import_file(Image *image, FILE* new_file, const char *file_name) {
         write_block(*image, pointer, data_block, image->meta.block_size);
         pointer_block[offset++] = pointer;
         offset++;
-        printf("penis loop\n");
     } while (read_bytes < file_size);
-    write_block(image, main_pointer, pointer_block, image.meta.block_size);
+    write_block(*image, main_pointer, (const char*)pointer_block, image->meta.block_size);
 
     DirEntry new_entry = {
         .file_size = file_size,
@@ -166,7 +181,6 @@ int import_file(Image *image, FILE* new_file, const char *file_name) {
         .name = { 0 },
     };
     strncpy(new_entry.name, file_name, sizeof(new_entry.name));
-    printf("penis 4\n");
 
     Pointer dir_block;
     size_t dir_offset;
@@ -176,43 +190,11 @@ int import_file(Image *image, FILE* new_file, const char *file_name) {
         return 1;
     }
     write_entry(*image, new_entry, dir_block, dir_offset);
-    printf("penis 5\n");
 
     printf("File written with %"SCNu64" bytes size at block %"SCNu32" and position %zu in root dir \n", file_size, dir_block, dir_offset);
     return 0;
 }
 
-DirEntry find_by_name(Image image, char name[256], int* err, Pointer* pointer,  int* offset) {
-    DirEntry found;
-    printf("finding file!!!!!!!!!!\n");
-    Pointer *pointer_block = read_block(image, 1, NULL);
-    Pointer *last_pointer = &pointer_block[image.meta.block_size/sizeof(Pointer)];
-    DirEntry *block = NULL;
-    bool find = false;
-    uint16_t rem_entries = image.meta.entries;
-    for (Pointer *cur_pointer = pointer_block; cur_pointer != last_pointer && !find; cur_pointer++) {
-        block = read_block(image, *cur_pointer, block);
-        DirEntry *last_entry = &block[image.meta.block_size / sizeof(DirEntry)];
-        for (DirEntry *entry = block; entry != last_entry; entry++) {
-            printf("dir_entry\n");
-            if (rem_entries == 0) {
-                free(block);
-                free(pointer_block);
-                fprintf(stderr, "FILE DOES NOT EXISTS YOUR PIECE OF SHIT\n");
-                exit(1);
-            }
-            if (entry->type != 'D' && !strcmp(entry->name, name)) {
-                found = *entry;
-                find = true;
-                break;
-            }
-            rem_entries--;
-            print_entry(*entry);
-        }
-    }
-
-    return found;
-}
 
 
 void update_entry (Image image, DirEntry entry, int offset) {
