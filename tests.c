@@ -109,12 +109,11 @@ void test_export_file(int *err) {
     const char *filename = "./images/hello.c";
     FILE *out_file = fopen(filename, "wb");
     DirEntry entry = {
-        .entry_size = block_size,
-        .name_size = strlen(filename),
-        .entry_type = 1,
         .file_size = data_size,
+        .type = 'F',
         .pointer = 2,
     };
+    strncpy(entry.name, filename, sizeof(entry.name));
     Pointer pointer_block[2] = { 3, 0 };
 
     fseek(file, block_size, SEEK_SET);

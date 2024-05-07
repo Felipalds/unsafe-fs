@@ -17,18 +17,21 @@ void export_file(Image image, DirEntry entry, FILE *out_file) {
         return;
     }
     uint64_t rem_bytes = entry.file_size;
-    BlockIter it = block_iter(image, entry.pointer);
-    void *buf = next_block(&it, NULL);
-    for (char *data = buf; data != NULL; data = next_block(&it, data)) {
+    Pointer *pointer_block = read_block(image, entry.pointer, NULL);
+    char *data_block = NULL;
+    size_t num_pointers = image.meta.block_size/sizeof(Pointer);
+    for (size_t block = 0; block < num_pointers && pointer_block[block]; block++) {
+        data_block = read_block(image, pointer_block[block], data_block);
         if (rem_bytes >= image.meta.block_size) {
-            fwrite(data, image.meta.block_size, 1, out_file);
+            fwrite(data_block, image.meta.block_size, 1, out_file);
             rem_bytes -= image.meta.block_size;
         } else {
-            fwrite(data, rem_bytes, 1, out_file);
+            fwrite(data_block, rem_bytes, 1, out_file);
+            break;
         }
     }
-    free(it.pointer_block);
-    free(buf);
+    free(data_block);
+    free(pointer_block);
 }
 
 void print_entry(DirEntry entry) {
